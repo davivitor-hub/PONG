@@ -14,6 +14,7 @@ import java.util.Random;
 
 public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     // Dimensões da tela
+    
     private static final int LARGURA = 800;
     private static final int ALTURA = 600;
 
