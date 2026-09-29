@@ -1,3 +1,5 @@
+Modifique aonde está escrito operadoreslogicos coloque o nome da sua class para funcionar corretamente esse jogo é facilmente atualizado com IA
+
 package blibioteca;
 
 import javax.swing.JFrame;
