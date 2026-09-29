@@ -13,16 +13,14 @@ import java.awt.event.KeyEvent;
 import java.util.Random;
 
 public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
-    
     // Dimensões da tela
-    
     private static final int LARGURA = 800;
     private static final int ALTURA = 600;
 
     // Estados do Jogo
     private enum EstadoJogo { 
-        MENU_MODO, MENU_TIPO_JOGO, MENU_META_PONTOS, MENU_DIFICULDADE, 
-        MENU_CUSTOMIZACAO, JOGANDO, PAUSADO, FIM_DE_JOGO 
+        MENU_MODO, MENU_TIPO_JOGO, MENU_META_PONTOS, MENU_OPCOES, 
+        JOGANDO, PAUSADO, FIM_DE_JOGO 
     }
     private EstadoJogo estadoAtual = EstadoJogo.MENU_MODO;
 
@@ -36,6 +34,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
 
     private enum Dificuldade { FACIL, MEDIO, DIFICIL, FRENESI }
     private Dificuldade dificuldadeAtual = Dificuldade.MEDIO;
+    private final String[] NOMES_DIFICULDADE = {"Fácil", "Médio", "Difícil", "Frenesi"};
 
     // Configuração de pontos customizada
     private final int[] OPCOES_PONTOS = {3, 5, 10, 15, 20};
@@ -43,14 +42,12 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     private int pontosParaVencer = 5;
 
     // Índices de seleção dos menus
-    private int opcaoMenuModo = 0;        // 0: Continuar, 1: 1P, 2: 2P, 3: Treino, 4: Personalização
+    private int opcaoMenuModo = 0;        // 0: Continuar, 1: 1P, 2: 2P, 3: Treino, 4: Opções
     private int opcaoMenuTipoJogo = 0;    // 0: Meta de Pontos, 1: Modo Infinito
-    private int opcaoMenuDificuldade = 1; // 0: Fácil, 1: Médio, 2: Difícil, 3: Frenesi
+    private int opcaoMenuOpcoes = 0;      // 0: Dif, 1: Cor J1, 2: Cor J2, 3: Cor Bola, 4: Tam Raquete, 5: Tam Bola, 6: Vel Raquete, 7: Voltar
     private int opcaoMenuPausa = 0;       // 0: Continuar, 1: Resetar Pontos, 2: Voltar ao Menu
     
     // Customização de Cores
-    private int opcaoMenuCustomizacao = 0;
-    
     private final Color[] CORES_DISPONIVEIS = {
         Color.WHITE, Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.ORANGE
     };
@@ -66,6 +63,25 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     private Color corJ2 = Color.WHITE;
     private Color corBola = Color.WHITE;
 
+    // Tamanhos Customizáveis
+    private final int[] OPCOES_TAM_RAQUETE = {60, 100, 140};
+    private final String[] NOMES_TAM_RAQUETE = {"Pequena (60px)", "Média (100px)", "Grande (140px)"};
+    private int idxTamRaquete = 1;
+    private int alturaRaquete = 100;
+
+    private final int[] OPCOES_TAM_BOLA = {12, 20, 30};
+    private final String[] NOMES_TAM_BOLA = {"Pequena (12px)", "Média (20px)", "Grande (30px)"};
+    private int idxTamBola = 1;
+    private int tamanhoBola = 20;
+
+    // Velocidade da Raquete Customizável
+    private final int[] OPCOES_VEL_RAQUETE = {4, 6, 9};
+    private final String[] NOMES_VEL_RAQUETE = {"Lenta (4px)", "Média (6px)", "Rápida (9px)"};
+    private int idxVelRaquete = 1;
+    private int velocidadeRaquete = 6;
+
+    private final int LARGURA_RAQUETE = 15;
+
     // Velocidades
     private double velocidadeBolaAtual = 4.0;
     private double velocidadeBolaBase = 4.0;
@@ -73,15 +89,12 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
 
     private boolean bolaEsperandoInicio = false;
 
-    // Posições e tamanhos das raquetes
+    // Posições das raquetes
     private int j1Y = 250, j2Y = 250;
-    private final int LARGURA_RAQUETE = 15;
-    private final int ALTURA_RAQUETE = 100;
 
     // Posição e velocidade da bola
     private double bolaX = 400, bolaY = 300;
     private double bolaXDir = 4, bolaYDir = 4;
-    private final int TAMANHO_BOLA = 20;
 
     // Pontuação
     private int pontosJ1 = 0, pontosJ2 = 0;
@@ -117,11 +130,8 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
             case MENU_META_PONTOS:
                 desenharMenuMetaPontos(g);
                 break;
-            case MENU_DIFICULDADE:
-                desenharMenuDificuldade(g);
-                break;
-            case MENU_CUSTOMIZACAO:
-                desenharMenuCustomizacao(g);
+            case MENU_OPCOES:
+                desenharMenuOpcoes(g);
                 break;
             case JOGANDO:
                 desenharJogo(g);
@@ -147,7 +157,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
         String op1 = (opcaoMenuModo == 1 ? "> " : "   ") + "1 Jogador (vs Bot)";
         String op2 = (opcaoMenuModo == 2 ? "> " : "   ") + "2 Jogadores";
         String op3 = (opcaoMenuModo == 3 ? "> " : "   ") + "Modo Treino (Solo)";
-        String op4 = (opcaoMenuModo == 4 ? "> " : "   ") + "Personalizar Cores";
+        String op4 = (opcaoMenuModo == 4 ? "> " : "   ") + "Opções do Jogo";
 
         g.setColor(!temPartidaSalva ? Color.GRAY : (opcaoMenuModo == 0 ? Color.YELLOW : Color.WHITE));
         g.drawString(op0, LARGURA / 2 - 160, 160);
@@ -170,41 +180,56 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
         g.drawString("Controles: J1 (W/S ou Setas no Bot/Treino) | J2 (Setas no 2P)", LARGURA / 2 - 240, 480);
     }
 
-    private void desenharMenuCustomizacao(Graphics g) {
+    private void desenharMenuOpcoes(Graphics g) {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 40));
-        g.drawString("Personalização de Cores", LARGURA / 2 - 230, 100);
+        g.drawString("OPÇÕES DO JOGO", LARGURA / 2 - 180, 70);
 
-        g.setFont(new Font("Arial", Font.PLAIN, 22));
+        g.setFont(new Font("Arial", Font.PLAIN, 18));
 
-        String op0 = (opcaoMenuCustomizacao == 0 ? "> " : "   ") + "Raquete J1: < " + NOMES_CORES[idxCorJ1] + " >";
-        String op1 = (opcaoMenuCustomizacao == 1 ? "> " : "   ") + "Raquete J2 / Parede: < " + NOMES_CORES[idxCorJ2] + " >";
-        String op2 = (opcaoMenuCustomizacao == 2 ? "> " : "   ") + "Bolinha: < " + NOMES_CORES[idxCorBola] + " >";
-        String op3 = (opcaoMenuCustomizacao == 3 ? "> " : "   ") + "Voltar ao Menu Principal";
+        String op0 = (opcaoMenuOpcoes == 0 ? "> " : "   ") + "Dificuldade: < " + NOMES_DIFICULDADE[dificuldadeAtual.ordinal()] + " >";
+        String op1 = (opcaoMenuOpcoes == 1 ? "> " : "   ") + "Cor Raquete J1: < " + NOMES_CORES[idxCorJ1] + " >";
+        String op2 = (opcaoMenuOpcoes == 2 ? "> " : "   ") + "Cor Raquete J2 / Parede: < " + NOMES_CORES[idxCorJ2] + " >";
+        String op3 = (opcaoMenuOpcoes == 3 ? "> " : "   ") + "Cor da Bolinha: < " + NOMES_CORES[idxCorBola] + " >";
+        String op4 = (opcaoMenuOpcoes == 4 ? "> " : "   ") + "Tamanho da Raquete: < " + NOMES_TAM_RAQUETE[idxTamRaquete] + " >";
+        String op5 = (opcaoMenuOpcoes == 5 ? "> " : "   ") + "Tamanho da Bola: < " + NOMES_TAM_BOLA[idxTamBola] + " >";
+        String op6 = (opcaoMenuOpcoes == 6 ? "> " : "   ") + "Velocidade Raquete: < " + NOMES_VEL_RAQUETE[idxVelRaquete] + " >";
+        String op7 = (opcaoMenuOpcoes == 7 ? "> " : "   ") + "Voltar ao Menu Principal";
 
-        g.setColor(opcaoMenuCustomizacao == 0 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op0, LARGURA / 2 - 220, 190);
+        g.setColor(opcaoMenuOpcoes == 0 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op0, LARGURA / 2 - 240, 130);
+
+        g.setColor(opcaoMenuOpcoes == 1 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op1, LARGURA / 2 - 240, 175);
         g.setColor(CORES_DISPONIVEIS[idxCorJ1]);
-        g.fillRect(LARGURA / 2 + 180, 172, 20, 20);
+        g.fillRect(LARGURA / 2 + 180, 160, 18, 18);
 
-        g.setColor(opcaoMenuCustomizacao == 1 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op1, LARGURA / 2 - 220, 250);
+        g.setColor(opcaoMenuOpcoes == 2 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op2, LARGURA / 2 - 240, 220);
         g.setColor(CORES_DISPONIVEIS[idxCorJ2]);
-        g.fillRect(LARGURA / 2 + 180, 232, 20, 20);
+        g.fillRect(LARGURA / 2 + 180, 205, 18, 18);
 
-        g.setColor(opcaoMenuCustomizacao == 2 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op2, LARGURA / 2 - 220, 310);
+        g.setColor(opcaoMenuOpcoes == 3 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op3, LARGURA / 2 - 240, 265);
         g.setColor(CORES_DISPONIVEIS[idxCorBola]);
-        g.fillOval(LARGURA / 2 + 180, 292, 20, 20);
+        g.fillOval(LARGURA / 2 + 180, 250, 18, 18);
 
-        g.setColor(opcaoMenuCustomizacao == 3 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op3, LARGURA / 2 - 220, 370);
+        g.setColor(opcaoMenuOpcoes == 4 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op4, LARGURA / 2 - 240, 310);
+
+        g.setColor(opcaoMenuOpcoes == 5 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op5, LARGURA / 2 - 240, 355);
+
+        g.setColor(opcaoMenuOpcoes == 6 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op6, LARGURA / 2 - 240, 400);
+
+        g.setColor(opcaoMenuOpcoes == 7 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op7, LARGURA / 2 - 240, 455);
 
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.ITALIC, 16));
-        g.drawString("Use CIMA/BAIXO (W/S) para navegar entre itens", LARGURA / 2 - 190, 450);
-        g.drawString("Use ESQUERDA/DIREITA (A/D) para alterar a cor", LARGURA / 2 - 190, 480);
-        g.drawString("Pressione ESPAÇO/ENTER ou ESC para voltar", LARGURA / 2 - 170, 510);
+        g.setFont(new Font("Arial", Font.ITALIC, 15));
+        g.drawString("Navegar: CIMA/BAIXO (W/S) | Alterar: ESQUERDA/DIREITA (A/D)", LARGURA / 2 - 230, 520);
+        g.drawString("Pressione ESPAÇO/ENTER ou ESC para confirmar/voltar", LARGURA / 2 - 210, 545);
     }
 
     private void desenharMenuTipoJogo(Graphics g) {
@@ -248,36 +273,6 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
         g.drawString("Pressione ESC para voltar", LARGURA / 2 - 100, 500);
     }
 
-    private void desenharMenuDificuldade(Graphics g) {
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 40));
-        g.drawString("Escolha a Dificuldade", LARGURA / 2 - 200, 120);
-
-        g.setFont(new Font("Arial", Font.PLAIN, 24));
-
-        String op0 = (opcaoMenuDificuldade == 0 ? "> " : "   ") + "Fácil";
-        String op1 = (opcaoMenuDificuldade == 1 ? "> " : "   ") + "Médio";
-        String op2 = (opcaoMenuDificuldade == 2 ? "> " : "   ") + "Difícil";
-        String op3 = (opcaoMenuDificuldade == 3 ? "> " : "   ") + "Frenesi (Acelera a cada rebate)";
-
-        g.setColor(opcaoMenuDificuldade == 0 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op0, LARGURA / 2 - 140, 210);
-
-        g.setColor(opcaoMenuDificuldade == 1 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op1, LARGURA / 2 - 140, 260);
-
-        g.setColor(opcaoMenuDificuldade == 2 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op2, LARGURA / 2 - 140, 310);
-
-        g.setColor(opcaoMenuDificuldade == 3 ? Color.RED : Color.WHITE);
-        g.drawString(op3, LARGURA / 2 - 140, 360);
-
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.ITALIC, 16));
-        g.drawString("Use W/S ou SETAS para navegar | ESPAÇO para confirmar", LARGURA / 2 - 220, 450);
-        g.drawString("Pressione ESC para voltar", LARGURA / 2 - 100, 490);
-    }
-
     private void desenharJogo(Graphics g) {
         g.setColor(Color.WHITE);
         if (!modoTreino) {
@@ -285,17 +280,17 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 g.fillRect(LARGURA / 2 - 2, i, 4, 15);
             }
             g.setColor(corJ2);
-            g.fillRect(LARGURA - 30 - LARGURA_RAQUETE, j2Y, LARGURA_RAQUETE, ALTURA_RAQUETE);
+            g.fillRect(LARGURA - 30 - LARGURA_RAQUETE, j2Y, LARGURA_RAQUETE, alturaRaquete);
         } else {
             g.setColor(corJ2);
             g.fillRect(LARGURA - 10, 0, 10, ALTURA);
         }
 
         g.setColor(corJ1);
-        g.fillRect(30, j1Y, LARGURA_RAQUETE, ALTURA_RAQUETE);
+        g.fillRect(30, j1Y, LARGURA_RAQUETE, alturaRaquete);
 
         g.setColor(corBola);
-        g.fillOval((int) bolaX, (int) bolaY, TAMANHO_BOLA, TAMANHO_BOLA);
+        g.fillOval((int) bolaX, (int) bolaY, tamanhoBola, tamanhoBola);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
@@ -403,24 +398,24 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     private void atualizar() {
         if (estadoAtual != EstadoJogo.JOGANDO) return;
 
-        // Movimento do Jogador 1
-        if (j1Cima && j1Y > 0) j1Y -= 6;
-        if (j1Baixo && j1Y < ALTURA - ALTURA_RAQUETE) j1Y += 6;
+        // Movimento do Jogador 1 usando velocidadeCustomizada
+        if (j1Cima && j1Y > 0) j1Y -= velocidadeRaquete;
+        if (j1Baixo && j1Y < ALTURA - alturaRaquete) j1Y += velocidadeRaquete;
 
         // Movimento do Jogador 2 ou Bot
         if (!modoTreino) {
             if (modoBot) {
                 if (bolaXDir > 0) {
-                    int centroRaquete = j2Y + ALTURA_RAQUETE / 2;
-                    if (centroRaquete < bolaY + 10 && j2Y < ALTURA - ALTURA_RAQUETE) {
+                    int centroRaquete = j2Y + alturaRaquete / 2;
+                    if (centroRaquete < bolaY + (tamanhoBola / 2) && j2Y < ALTURA - alturaRaquete) {
                         j2Y += velocidadeBot;
-                    } else if (centroRaquete > bolaY + 10 && j2Y > 0) {
+                    } else if (centroRaquete > bolaY + (tamanhoBola / 2) && j2Y > 0) {
                         j2Y -= velocidadeBot;
                     }
                 }
             } else {
-                if (j2Cima && j2Y > 0) j2Y -= 6;
-                if (j2Baixo && j2Y < ALTURA - ALTURA_RAQUETE) j2Y += 6; // CORRIGIDO
+                if (j2Cima && j2Y > 0) j2Y -= velocidadeRaquete;
+                if (j2Baixo && j2Y < ALTURA - alturaRaquete) j2Y += velocidadeRaquete;
             }
         }
 
@@ -430,13 +425,13 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
             bolaY += bolaYDir;
 
             // Colisão com topo e base
-            if (bolaY <= 0 || bolaY >= ALTURA - TAMANHO_BOLA) {
+            if (bolaY <= 0 || bolaY >= ALTURA - tamanhoBola) {
                 bolaYDir = -bolaYDir;
             }
 
             // Colisão com Raquete 1
             if (bolaX <= 30 + LARGURA_RAQUETE && bolaX >= 30) {
-                if (bolaY + TAMANHO_BOLA >= j1Y && bolaY <= j1Y + ALTURA_RAQUETE) {
+                if (bolaY + tamanhoBola >= j1Y && bolaY <= j1Y + alturaRaquete) {
                     bolaXDir = Math.abs(bolaXDir);
                     bolaX = 30 + LARGURA_RAQUETE + 1;
                     aumentarVelocidadeFrenesi();
@@ -451,16 +446,16 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
 
             // Colisão com o lado direito
             if (modoTreino) {
-                if (bolaX + TAMANHO_BOLA >= LARGURA - 10) {
+                if (bolaX + tamanhoBola >= LARGURA - 10) {
                     bolaXDir = -Math.abs(bolaXDir);
-                    bolaX = LARGURA - 10 - TAMANHO_BOLA - 1;
+                    bolaX = LARGURA - 10 - tamanhoBola - 1;
                     aumentarVelocidadeFrenesi();
                 }
             } else {
-                if (bolaX + TAMANHO_BOLA >= LARGURA - 30 - LARGURA_RAQUETE && bolaX + TAMANHO_BOLA <= LARGURA - 30) {
-                    if (bolaY + TAMANHO_BOLA >= j2Y && bolaY <= j2Y + ALTURA_RAQUETE) {
+                if (bolaX + tamanhoBola >= LARGURA - 30 - LARGURA_RAQUETE && bolaX + tamanhoBola <= LARGURA - 30) {
+                    if (bolaY + tamanhoBola >= j2Y && bolaY <= j2Y + alturaRaquete) {
                         bolaXDir = -Math.abs(bolaXDir);
-                        bolaX = LARGURA - 30 - LARGURA_RAQUETE - TAMANHO_BOLA - 1;
+                        bolaX = LARGURA - 30 - LARGURA_RAQUETE - tamanhoBola - 1;
                         aumentarVelocidadeFrenesi();
                     }
                 }
@@ -493,8 +488,8 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     }
 
     private void reiniciarBola() {
-        bolaX = LARGURA / 2.0 - TAMANHO_BOLA / 2.0;
-        bolaY = ALTURA / 2.0 - TAMANHO_BOLA / 2.0;
+        bolaX = LARGURA / 2.0 - tamanhoBola / 2.0;
+        bolaY = ALTURA / 2.0 - tamanhoBola / 2.0;
 
         velocidadeBolaAtual = velocidadeBolaBase;
 
@@ -521,8 +516,8 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
             pontosJ2 = 0;
             rebatesTreinoAtual = 0;
         }
-        j1Y = 250;
-        j2Y = 250;
+        j1Y = (ALTURA - alturaRaquete) / 2;
+        j2Y = (ALTURA - alturaRaquete) / 2;
         j1Cima = j1Baixo = j2Cima = j2Baixo = false;
         aplicarDificuldade();
         reiniciarBola();
@@ -530,6 +525,40 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
             bolaEsperandoInicio = false;
         }
         temPartidaSalva = true;
+    }
+
+    private void alterarOpcaoOpcoes(int direcao) {
+        switch (opcaoMenuOpcoes) {
+            case 0: // Dificuldade
+                int totalDif = Dificuldade.values().length;
+                int novaDif = (dificuldadeAtual.ordinal() + direcao + totalDif) % totalDif;
+                dificuldadeAtual = Dificuldade.values()[novaDif];
+                break;
+            case 1: // Cor J1
+                idxCorJ1 = (idxCorJ1 + direcao + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
+                corJ1 = CORES_DISPONIVEIS[idxCorJ1];
+                break;
+            case 2: // Cor J2
+                idxCorJ2 = (idxCorJ2 + direcao + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
+                corJ2 = CORES_DISPONIVEIS[idxCorJ2];
+                break;
+            case 3: // Cor Bola
+                idxCorBola = (idxCorBola + direcao + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
+                corBola = CORES_DISPONIVEIS[idxCorBola];
+                break;
+            case 4: // Tamanho Raquete
+                idxTamRaquete = (idxTamRaquete + direcao + OPCOES_TAM_RAQUETE.length) % OPCOES_TAM_RAQUETE.length;
+                alturaRaquete = OPCOES_TAM_RAQUETE[idxTamRaquete];
+                break;
+            case 5: // Tamanho Bola
+                idxTamBola = (idxTamBola + direcao + OPCOES_TAM_BOLA.length) % OPCOES_TAM_BOLA.length;
+                tamanhoBola = OPCOES_TAM_BOLA[idxTamBola];
+                break;
+            case 6: // Velocidade Raquete
+                idxVelRaquete = (idxVelRaquete + direcao + OPCOES_VEL_RAQUETE.length) % OPCOES_VEL_RAQUETE.length;
+                velocidadeRaquete = OPCOES_VEL_RAQUETE[idxVelRaquete];
+                break;
+        }
     }
 
     @Override
@@ -560,47 +589,30 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                         estadoAtual = EstadoJogo.JOGANDO;
                     }
                 } else if (opcaoMenuModo == 4) {
-                    estadoAtual = EstadoJogo.MENU_CUSTOMIZACAO;
+                    estadoAtual = EstadoJogo.MENU_OPCOES;
                 } else {
                     modoBot = (opcaoMenuModo == 1);
                     modoTreino = (opcaoMenuModo == 3);
 
                     if (modoTreino) {
-                        estadoAtual = EstadoJogo.MENU_DIFICULDADE;
+                        resetarPartida(true);
+                        estadoAtual = EstadoJogo.JOGANDO;
                     } else {
                         estadoAtual = EstadoJogo.MENU_TIPO_JOGO;
                     }
                 }
             }
-        } else if (estadoAtual == EstadoJogo.MENU_CUSTOMIZACAO) {
+        } else if (estadoAtual == EstadoJogo.MENU_OPCOES) {
             if (codigo == KeyEvent.VK_W || codigo == KeyEvent.VK_UP) {
-                opcaoMenuCustomizacao = (opcaoMenuCustomizacao - 1 + 4) % 4;
+                opcaoMenuOpcoes = (opcaoMenuOpcoes - 1 + 8) % 8;
             } else if (codigo == KeyEvent.VK_S || codigo == KeyEvent.VK_DOWN) {
-                opcaoMenuCustomizacao = (opcaoMenuCustomizacao + 1) % 4;
+                opcaoMenuOpcoes = (opcaoMenuOpcoes + 1) % 8;
             } else if (codigo == KeyEvent.VK_D || codigo == KeyEvent.VK_RIGHT) {
-                if (opcaoMenuCustomizacao == 0) {
-                    idxCorJ1 = (idxCorJ1 + 1) % CORES_DISPONIVEIS.length;
-                    corJ1 = CORES_DISPONIVEIS[idxCorJ1];
-                } else if (opcaoMenuCustomizacao == 1) {
-                    idxCorJ2 = (idxCorJ2 + 1) % CORES_DISPONIVEIS.length;
-                    corJ2 = CORES_DISPONIVEIS[idxCorJ2];
-                } else if (opcaoMenuCustomizacao == 2) {
-                    idxCorBola = (idxCorBola + 1) % CORES_DISPONIVEIS.length;
-                    corBola = CORES_DISPONIVEIS[idxCorBola];
-                }
+                alterarOpcaoOpcoes(1);
             } else if (codigo == KeyEvent.VK_A || codigo == KeyEvent.VK_LEFT) {
-                if (opcaoMenuCustomizacao == 0) {
-                    idxCorJ1 = (idxCorJ1 - 1 + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
-                    corJ1 = CORES_DISPONIVEIS[idxCorJ1];
-                } else if (opcaoMenuCustomizacao == 1) {
-                    idxCorJ2 = (idxCorJ2 - 1 + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
-                    corJ2 = CORES_DISPONIVEIS[idxCorJ2];
-                } else if (opcaoMenuCustomizacao == 2) {
-                    idxCorBola = (idxCorBola - 1 + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
-                    corBola = CORES_DISPONIVEIS[idxCorBola];
-                }
+                alterarOpcaoOpcoes(-1);
             } else if (codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_ESCAPE) {
-                if (opcaoMenuCustomizacao == 3 || codigo == KeyEvent.VK_ESCAPE || codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
+                if (opcaoMenuOpcoes == 7 || codigo == KeyEvent.VK_ESCAPE || codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
                     estadoAtual = EstadoJogo.MENU_MODO;
                 }
             }
@@ -614,7 +626,8 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 if (tipoJogoAtual == TipoJogo.PONTOS_DEFINIDOS) {
                     estadoAtual = EstadoJogo.MENU_META_PONTOS;
                 } else {
-                    estadoAtual = EstadoJogo.MENU_DIFICULDADE;
+                    resetarPartida(true);
+                    estadoAtual = EstadoJogo.JOGANDO;
                 }
             } else if (codigo == KeyEvent.VK_ESCAPE) {
                 estadoAtual = EstadoJogo.MENU_MODO;
@@ -626,30 +639,10 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 indiceOpcaoPontos = (indiceOpcaoPontos + 1) % OPCOES_PONTOS.length;
             } else if (codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
                 pontosParaVencer = OPCOES_PONTOS[indiceOpcaoPontos];
-                estadoAtual = EstadoJogo.MENU_DIFICULDADE;
-            } else if (codigo == KeyEvent.VK_ESCAPE) {
-                estadoAtual = EstadoJogo.MENU_TIPO_JOGO;
-            }
-        } else if (estadoAtual == EstadoJogo.MENU_DIFICULDADE) {
-            if (codigo == KeyEvent.VK_W || codigo == KeyEvent.VK_UP) {
-                opcaoMenuDificuldade = (opcaoMenuDificuldade - 1 + 4) % 4;
-            } else if (codigo == KeyEvent.VK_S || codigo == KeyEvent.VK_DOWN) {
-                opcaoMenuDificuldade = (opcaoMenuDificuldade + 1) % 4;
-            } else if (codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
-                switch (opcaoMenuDificuldade) {
-                    case 0: dificuldadeAtual = Dificuldade.FACIL; break;
-                    case 1: dificuldadeAtual = Dificuldade.MEDIO; break;
-                    case 2: dificuldadeAtual = Dificuldade.DIFICIL; break;
-                    case 3: dificuldadeAtual = Dificuldade.FRENESI; break;
-                }
                 resetarPartida(true);
                 estadoAtual = EstadoJogo.JOGANDO;
             } else if (codigo == KeyEvent.VK_ESCAPE) {
-                if (modoTreino) {
-                    estadoAtual = EstadoJogo.MENU_MODO;
-                } else {
-                    estadoAtual = (tipoJogoAtual == TipoJogo.PONTOS_DEFINIDOS) ? EstadoJogo.MENU_META_PONTOS : EstadoJogo.MENU_TIPO_JOGO;
-                }
+                estadoAtual = EstadoJogo.MENU_TIPO_JOGO;
             }
         } else if (estadoAtual == EstadoJogo.JOGANDO) {
             if (codigo == KeyEvent.VK_ESCAPE) {
