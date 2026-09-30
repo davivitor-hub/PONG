@@ -23,6 +23,9 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
         JOGANDO, PAUSADO, FIM_DE_JOGO 
     }
     private EstadoJogo estadoAtual = EstadoJogo.MENU_MODO;
+    
+    // Controle do estado de origem das Opções para retorno correto
+    private EstadoJogo estadoAnteriorOpcoes = EstadoJogo.MENU_MODO;
 
     // Modos, Tipos de Jogo e Dificuldades
     private boolean modoBot = false;
@@ -45,7 +48,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     private int opcaoMenuModo = 0;        // 0: Continuar, 1: 1P, 2: 2P, 3: Treino, 4: Opções
     private int opcaoMenuTipoJogo = 0;    // 0: Meta de Pontos, 1: Modo Infinito
     private int opcaoMenuOpcoes = 0;      // 0: Dif, 1: Cor J1, 2: Cor J2, 3: Cor Bola, 4: Tam Raquete, 5: Tam Bola, 6: Vel Raquete, 7: Voltar
-    private int opcaoMenuPausa = 0;       // 0: Continuar, 1: Resetar Pontos, 2: Voltar ao Menu
+    private int opcaoMenuPausa = 0;       // 0: Continuar, 1: Opções, 2: Resetar, 3: Voltar ao Menu
     
     // Customização de Cores
     private final Color[] CORES_DISPONIVEIS = {
@@ -194,7 +197,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
         String op4 = (opcaoMenuOpcoes == 4 ? "> " : "   ") + "Tamanho da Raquete: < " + NOMES_TAM_RAQUETE[idxTamRaquete] + " >";
         String op5 = (opcaoMenuOpcoes == 5 ? "> " : "   ") + "Tamanho da Bola: < " + NOMES_TAM_BOLA[idxTamBola] + " >";
         String op6 = (opcaoMenuOpcoes == 6 ? "> " : "   ") + "Velocidade Raquete: < " + NOMES_VEL_RAQUETE[idxVelRaquete] + " >";
-        String op7 = (opcaoMenuOpcoes == 7 ? "> " : "   ") + "Voltar ao Menu Principal";
+        String op7 = (opcaoMenuOpcoes == 7 ? "> " : "   ") + "Voltar";
 
         g.setColor(opcaoMenuOpcoes == 0 ? Color.YELLOW : Color.WHITE);
         g.drawString(op0, LARGURA / 2 - 240, 130);
@@ -330,26 +333,30 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 40));
-        g.drawString("PAUSA", LARGURA / 2 - 70, 180);
+        g.drawString("PAUSA", LARGURA / 2 - 70, 160);
 
         g.setFont(new Font("Arial", Font.PLAIN, 22));
 
         String op0 = (opcaoMenuPausa == 0 ? "> " : "   ") + "Continuar Jogo";
-        String op1 = (opcaoMenuPausa == 1 ? "> " : "   ") + "Resetar Pontos / Reiniciar";
-        String op2 = (opcaoMenuPausa == 2 ? "> " : "   ") + "Voltar ao Menu Principal";
+        String op1 = (opcaoMenuPausa == 1 ? "> " : "   ") + "Opções do Jogo";
+        String op2 = (opcaoMenuPausa == 2 ? "> " : "   ") + "Resetar Pontos / Reiniciar";
+        String op3 = (opcaoMenuPausa == 3 ? "> " : "   ") + "Voltar ao Menu Principal";
 
         g.setColor(opcaoMenuPausa == 0 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op0, LARGURA / 2 - 140, 270);
+        g.drawString(op0, LARGURA / 2 - 140, 240);
 
         g.setColor(opcaoMenuPausa == 1 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op1, LARGURA / 2 - 140, 320);
+        g.drawString(op1, LARGURA / 2 - 140, 290);
 
         g.setColor(opcaoMenuPausa == 2 ? Color.YELLOW : Color.WHITE);
-        g.drawString(op2, LARGURA / 2 - 140, 370);
+        g.drawString(op2, LARGURA / 2 - 140, 340);
+
+        g.setColor(opcaoMenuPausa == 3 ? Color.YELLOW : Color.WHITE);
+        g.drawString(op3, LARGURA / 2 - 140, 390);
 
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.ITALIC, 14));
-        g.drawString("Use W/S ou SETAS | ESPAÇO/ENTER para selecionar | ESC para voltar", LARGURA / 2 - 220, 440);
+        g.drawString("Use W/S ou SETAS | ESPAÇO/ENTER para selecionar | ESC para voltar", LARGURA / 2 - 220, 460);
     }
 
     private void desenharFimDeJogo(Graphics g) {
@@ -382,7 +389,16 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 velocidadeBot = 6;
                 break;
         }
+
+        // Atualiza a velocidade da bola atual mantendo a sua direção
+        double velocidadeAntiga = velocidadeBolaAtual;
         velocidadeBolaAtual = velocidadeBolaBase;
+
+        if (velocidadeAntiga != 0) {
+            double fatorProporcao = velocidadeBolaAtual / velocidadeAntiga;
+            bolaXDir *= fatorProporcao;
+            bolaYDir *= fatorProporcao;
+        }
     }
 
     private void aumentarVelocidadeFrenesi() {
@@ -398,7 +414,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
     private void atualizar() {
         if (estadoAtual != EstadoJogo.JOGANDO) return;
 
-        // Movimento do Jogador 1 usando velocidadeCustomizada
+        // Movimento do Jogador 1
         if (j1Cima && j1Y > 0) j1Y -= velocidadeRaquete;
         if (j1Baixo && j1Y < ALTURA - alturaRaquete) j1Y += velocidadeRaquete;
 
@@ -533,6 +549,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 int totalDif = Dificuldade.values().length;
                 int novaDif = (dificuldadeAtual.ordinal() + direcao + totalDif) % totalDif;
                 dificuldadeAtual = Dificuldade.values()[novaDif];
+                aplicarDificuldade(); // Aplica a nova velocidade na hora
                 break;
             case 1: // Cor J1
                 idxCorJ1 = (idxCorJ1 + direcao + CORES_DISPONIVEIS.length) % CORES_DISPONIVEIS.length;
@@ -589,6 +606,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                         estadoAtual = EstadoJogo.JOGANDO;
                     }
                 } else if (opcaoMenuModo == 4) {
+                    estadoAnteriorOpcoes = EstadoJogo.MENU_MODO;
                     estadoAtual = EstadoJogo.MENU_OPCOES;
                 } else {
                     modoBot = (opcaoMenuModo == 1);
@@ -613,7 +631,7 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
                 alterarOpcaoOpcoes(-1);
             } else if (codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER || codigo == KeyEvent.VK_ESCAPE) {
                 if (opcaoMenuOpcoes == 7 || codigo == KeyEvent.VK_ESCAPE || codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
-                    estadoAtual = EstadoJogo.MENU_MODO;
+                    estadoAtual = estadoAnteriorOpcoes;
                 }
             }
         } else if (estadoAtual == EstadoJogo.MENU_TIPO_JOGO) {
@@ -665,16 +683,19 @@ public class operadoreslogicos extends JPanel implements Runnable, KeyListener {
             }
         } else if (estadoAtual == EstadoJogo.PAUSADO) {
             if (codigo == KeyEvent.VK_W || codigo == KeyEvent.VK_UP) {
-                opcaoMenuPausa = (opcaoMenuPausa - 1 + 3) % 3;
+                opcaoMenuPausa = (opcaoMenuPausa - 1 + 4) % 4;
             } else if (codigo == KeyEvent.VK_S || codigo == KeyEvent.VK_DOWN) {
-                opcaoMenuPausa = (opcaoMenuPausa + 1) % 3;
+                opcaoMenuPausa = (opcaoMenuPausa + 1) % 4;
             } else if (codigo == KeyEvent.VK_SPACE || codigo == KeyEvent.VK_ENTER) {
                 if (opcaoMenuPausa == 0) {
                     estadoAtual = EstadoJogo.JOGANDO;
                 } else if (opcaoMenuPausa == 1) {
+                    estadoAnteriorOpcoes = EstadoJogo.PAUSADO;
+                    estadoAtual = EstadoJogo.MENU_OPCOES;
+                } else if (opcaoMenuPausa == 2) {
                     resetarPartida(true);
                     estadoAtual = EstadoJogo.JOGANDO;
-                } else if (opcaoMenuPausa == 2) {
+                } else if (opcaoMenuPausa == 3) {
                     estadoAtual = EstadoJogo.MENU_MODO;
                 }
             } else if (codigo == KeyEvent.VK_ESCAPE) {
